@@ -1,37 +1,15 @@
 {
-  "builds": [
-    {
-      "src": "api/*.php",
-      "use": "@vercel/php",
-      "config": {
-        "runtime": "vercel-php@0.6.0"
-      }
+  "functions": {
+    "api/*.php": {
+      "runtime": "vercel-php@0.6.0"
     },
-    {
-      "src": "singnduetoko/*.php",
-      "use": "@vercel/php",
-      "config": {
-        "runtime": "vercel-php@0.6.0"
-      }
+    "singnduetoko/*.php": {
+      "runtime": "vercel-php@0.6.0"
     },
-    {
-      "src": "*.php",
-      "use": "@vercel/php",
-      "config": {
-        "runtime": "vercel-php@0.6.0"
-      }
-    },
-    {
-      "src": "src/assets/**/*",
-      "use": "@vercel/static"
+    "*.php": {
+      "runtime": "vercel-php@0.6.0"
     }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/$1"
-    }
-  ],
+  },
   "rewrites": [
     {
       "source": "/(.*)",

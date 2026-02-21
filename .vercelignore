@@ -1,12 +1,4 @@
-.vscode/
-.idea/
-*.log
-node_modules/
-README.md
-.git/
-.gitignore
+.git
 .env
-.env.local
-.env.*.local
-tests/
-docs/
+README.md
+node_modules

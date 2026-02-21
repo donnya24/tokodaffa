@@ -203,3 +203,4 @@ $csrf_token = generateCSRFToken();
     </div>
 </body>
 </html>
+<?php include 'partials/footer.php'; ?>

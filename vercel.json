@@ -1,0 +1,20 @@
+{
+  "version": 2,
+  "buildCommand": "bash vercel.sh",
+  "installCommand": "composer install",
+  "functions": {
+    "api/*.php": {
+      "runtime": "vercel-php@0.6.0"
+    }
+  },
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/index.php"
+    },
+    {
+      "src": "/singnduetoko/(.*)",
+      "dest": "/singnduetoko/$1"
+    }
+  ]
+}

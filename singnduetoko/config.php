@@ -142,16 +142,16 @@ function deleteProductImage($filename) {
 
 function getProductImageUrl($filename) {
     if (empty($filename)) {
-        return '/tokodaffa26/src/assets/images/products/placeholder.png';
+        return '/tokodaffa/src/assets/images/products/placeholder.png';
     }
     
     // Cek apakah file benar-benar ada
     $file_path = PRODUCTS_IMAGE_PATH . $filename;
     if (file_exists($file_path)) {
-        return '/tokodaffa26/src/assets/images/products/' . $filename;
+        return '/tokodaffa/src/assets/images/products/' . $filename;
     } else {
         // Log error untuk debugging
         error_log("Gambar tidak ditemukan: " . $file_path);
-        return '/tokodaffa26/src/assets/images/products/placeholder.png';
+        return '/tokodaffa/src/assets/images/products/placeholder.png';
     }
 }

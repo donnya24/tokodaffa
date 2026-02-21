@@ -1,20 +1,34 @@
 {
-  "version": 2,
-  "buildCommand": "bash vercel.sh",
-  "installCommand": "composer install",
   "functions": {
     "api/*.php": {
       "runtime": "vercel-php@0.6.0"
+    },
+    "singnduetoko/*.php": {
+      "runtime": "vercel-php@0.6.0"
+    },
+    "*.php": {
+      "runtime": "vercel-php@0.6.0"
     }
   },
-  "routes": [
+  "builds": [
     {
-      "src": "/(.*)",
-      "dest": "/index.php"
+      "src": "api/*.php",
+      "use": "@vercel/php"
     },
     {
-      "src": "/singnduetoko/(.*)",
-      "dest": "/singnduetoko/$1"
+      "src": "singnduetoko/*.php",
+      "use": "@vercel/php"
+    },
+    {
+      "src": "*.php",
+      "use": "@vercel/php"
     }
-  ]
+  ],
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.php"
+    }
+  ],
+  "buildCommand": "bash vercel.sh"
 }

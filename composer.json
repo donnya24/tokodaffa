@@ -1,10 +1,23 @@
 {
+  "name": "tokodaffa/website",
+  "description": "Toko Daffa Website",
+  "type": "project",
   "require": {
-    "vlucas/phpdotenv": "^5.6"
+    "php": ">=7.4",
+    "vlucas/phpdotenv": "^5.5"
+  },
+  "config": {
+    "optimize-autoloader": true,
+    "preferred-install": "dist",
+    "sort-packages": true
   },
   "scripts": {
     "post-install-cmd": [
-      "chmod -R 755 ."
-    ]
+      "@clear-cache"
+    ],
+    "post-update-cmd": [
+      "@clear-cache"
+    ],
+    "clear-cache": "php -r 'echo \"Cache cleared\\n\";'"
   }
 }

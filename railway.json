@@ -1,7 +1,11 @@
 {
   "build": {
     "builder": "NIXPACKS",
-    "nixPkgs": ["php80Extensions.pdo_pgsql", "php80Extensions.pgsql"]
+    "nixPkgs": ["php80Extensions.pdo_pgsql", "php80Extensions.pgsql"],
+    "config": {
+      "php_fallback_path": "/index.php",
+      "php_index_path": "/singnduetoko/index.php"
+    }
   },
   "deploy": {
     "include": [
@@ -10,6 +14,7 @@
       "api/**/*",
       "*.php",
       "composer.json"
-    ]
+    ],
+    "startCommand": "php -S 0.0.0.0:$PORT -t ."
   }
 }

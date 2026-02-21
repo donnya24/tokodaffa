@@ -53,7 +53,7 @@ function isLoggedIn() {
 
 function requireLogin() {
     if (!isLoggedIn()) {
-        header('Location: index.php');
+        header('Location: /singnduetoko/index.php');
         exit();
     }
 }

@@ -37,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Log successful login
                 error_log("Successful login for user: $username from IP: " . $_SERVER['REMOTE_ADDR']);
                 
-                header('Location: dashboard.php');
+                header('Location: /singnduetoko/dashboard.php');
                 exit();
             } else {
                 $errors[] = "Username atau password salah!";

@@ -141,17 +141,37 @@ function deleteProductImage($filename) {
 }
 
 function getProductImageUrl($filename) {
-    if (empty($filename)) {
-        return '/tokodaffa/src/assets/images/products/placeholder.png';
+    // Deteksi base URL secara otomatis
+    $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://';
+    $host = $_SERVER['HTTP_HOST'];
+    $script_name = $_SERVER['SCRIPT_NAME'];
+    
+    // Dapatkan folder root (misal: /tokodaffa)
+    $root_folder = '';
+    if (strpos($script_name, '/') !== false) {
+        $parts = explode('/', trim($script_name, '/'));
+        if (count($parts) > 0 && $parts[0] !== 'singnduetoko') {
+            $root_folder = '/' . $parts[0];
+        }
     }
     
-    // Cek apakah file benar-benar ada
-    $file_path = PRODUCTS_IMAGE_PATH . $filename;
+    // Base URL
+    $base_url = $protocol . $host . $root_folder;
+    
+    // Path gambar
+    $image_path = '/src/assets/images/products/';
+    
+    if (empty($filename)) {
+        return $base_url . $image_path . 'placeholder.png';
+    }
+    
+    // Cek file di filesystem
+    $file_path = $_SERVER['DOCUMENT_ROOT'] . $root_folder . $image_path . $filename;
+    
     if (file_exists($file_path)) {
-        return '/tokodaffa/src/assets/images/products/' . $filename;
+        return $base_url . $image_path . $filename;
     } else {
-        // Log error untuk debugging
         error_log("Gambar tidak ditemukan: " . $file_path);
-        return '/tokodaffa/src/assets/images/products/placeholder.png';
+        return $base_url . $image_path . 'placeholder.png';
     }
 }

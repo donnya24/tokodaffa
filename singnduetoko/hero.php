@@ -3,6 +3,8 @@ require_once 'config.php';
 require_once 'database.php';
 requireLogin();
 
+$page_title = "Edit Hero Section"; // Tambahkan page title
+
 $db = Database::getInstance();
 $heroData = $db->getHeroSection();
 
@@ -26,8 +28,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ];
         
         if ($db->updateHeroSection($data)) {
-            $success = "Hero section berhasil diupdate!";
-            $heroData = $db->getHeroSection(); // Refresh data
+            $_SESSION['success_message'] = "Hero section berhasil diupdate!";
+            header('Location: hero.php');
+            exit();
         } else {
             $error = "Gagal mengupdate data";
         }
@@ -35,172 +38,200 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $csrf_token = generateCSRFToken();
+
+include 'partials/header.php';
+include 'partials/sidebar.php';
 ?>
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Hero Section - Toko Daffa Admin</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-</head>
-<body class="bg-gray-50">
-    <div class="flex h-screen">
-        <!-- Sidebar -->
-        <div class="w-64 bg-gradient-to-b from-green-900 to-green-800 text-white shadow-xl">
-            <div class="p-6 border-b border-green-700">
-                <div class="flex items-center gap-3">
-                    <div class="bg-green-600 p-2 rounded-xl">
-                        <i class="fas fa-store text-2xl"></i>
+
+<!-- Content -->
+<div class="flex-1 overflow-y-auto">
+    
+    <!-- Content -->
+    <div class="p-6">
+        <!-- Notifikasi -->
+        <?php if (isset($_SESSION['success_message'])): ?>
+            <div class="bg-green-50 border-l-4 border-green-500 text-green-700 p-4 rounded-lg mb-6 flex items-center gap-3">
+                <i class="fas fa-check-circle text-green-500 text-xl"></i>
+                <span><?php echo $_SESSION['success_message']; unset($_SESSION['success_message']); ?></span>
+            </div>
+        <?php endif; ?>
+        
+        <?php if (isset($error)): ?>
+            <div class="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded-lg mb-6 flex items-center gap-3">
+                <i class="fas fa-exclamation-circle text-red-500 text-xl"></i>
+                <span><?php echo $error; ?></span>
+            </div>
+        <?php endif; ?>
+        
+        <!-- Preview Card -->
+        <div class="mb-8 bg-gradient-to-r from-green-50 to-blue-50 rounded-xl p-6 border border-green-100">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                <i class="fas fa-eye text-green-600"></i>
+                Preview Tampilan
+            </h3>
+            <div class="flex flex-col md:flex-row gap-6 items-center">
+                <div class="w-32 h-32 bg-gray-200 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-image text-4xl text-gray-400"></i>
+                </div>
+                <div>
+                    <div class="inline-block bg-green-800/70 text-green-100 px-3 py-1 rounded-full text-xs font-semibold mb-2 border border-green-600">
+                        <span id="previewBadge"><?php echo htmlspecialchars($heroData['badge']); ?></span>
                     </div>
-                    <div>
-                        <h3 class="font-bold text-lg">Toko Daffa</h3>
-                        <p class="text-xs text-green-300">Admin Panel</p>
+                    <h4 class="font-bold text-xl text-gray-800">
+                        <span id="previewTitle1"><?php echo htmlspecialchars($heroData['title1']); ?></span> 
+                        <span class="text-green-600" id="previewTitle2"><?php echo htmlspecialchars($heroData['title2']); ?></span>
+                    </h4>
+                    <p class="text-gray-600 text-sm mt-1" id="previewSubtitle"><?php echo htmlspecialchars($heroData['subtitle']); ?></p>
+                    <div class="flex gap-4 mt-2 text-sm text-green-600">
+                        <span><i class="far fa-clock mr-1"></i> <span id="previewTime"><?php echo htmlspecialchars($heroData['open_time']); ?> - <?php echo htmlspecialchars($heroData['close_time']); ?> WIB</span></span>
                     </div>
                 </div>
             </div>
-            
-            <nav class="p-4 space-y-1">
-                <a href="dashboard.php" class="flex items-center gap-3 py-3 px-4 hover:bg-green-700 rounded-xl transition">
-                    <i class="fas fa-tachometer-alt w-5"></i> Dashboard
-                </a>
-                <a href="products.php" class="flex items-center gap-3 py-3 px-4 hover:bg-green-700 rounded-xl transition">
-                    <i class="fas fa-box w-5"></i> Produk
-                </a>
-                <a href="hero.php" class="flex items-center gap-3 py-3 px-4 bg-green-700 rounded-xl">
-                    <i class="fas fa-image w-5"></i> Hero Section
-                </a>
-                <a href="tentang.php" class="flex items-center gap-3 py-3 px-4 hover:bg-green-700 rounded-xl transition">
-                    <i class="fas fa-store w-5"></i> Tentang Kami
-                </a>
-                <a href="kontak.php" class="flex items-center gap-3 py-3 px-4 hover:bg-green-700 rounded-xl transition">
-                    <i class="fas fa-phone w-5"></i> Kontak
-                </a>
-                <a href="logout.php" class="flex items-center gap-3 py-3 px-4 hover:bg-red-700 rounded-xl transition text-red-200 mt-8">
-                    <i class="fas fa-sign-out-alt w-5"></i> Logout
-                </a>
-            </nav>
         </div>
         
-        <!-- Main Content -->
-        <div class="flex-1 overflow-y-auto">
-            <div class="bg-white shadow-sm p-6 mb-6 sticky top-0 z-10">
-                <h2 class="text-2xl font-bold text-gray-800">Edit Hero Section</h2>
-            </div>
-            
-            <div class="p-6">
-                <?php if (isset($success)): ?>
-                    <div class="bg-green-50 border-l-4 border-green-500 text-green-700 p-4 rounded-lg mb-6 flex items-center gap-3">
-                        <i class="fas fa-check-circle text-green-500"></i>
-                        <span><?php echo $success; ?></span>
-                    </div>
-                <?php endif; ?>
+        <!-- Form Card -->
+        <div class="bg-white rounded-2xl shadow-sm p-6">
+            <form method="POST">
+                <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
                 
-                <?php if (isset($error)): ?>
-                    <div class="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded-lg mb-6 flex items-center gap-3">
-                        <i class="fas fa-exclamation-circle text-red-500"></i>
-                        <span><?php echo $error; ?></span>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-gray-700 font-semibold mb-2">Badge Text</label>
+                        <input type="text" name="badge" id="badge" required
+                               value="<?php echo htmlspecialchars($heroData['badge']); ?>"
+                               class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition"
+                               oninput="updatePreview()">
                     </div>
-                <?php endif; ?>
-                
-                <div class="bg-white rounded-2xl shadow-sm p-6">
-                    <form method="POST">
-                        <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-gray-700 font-semibold mb-2">Judul 1</label>
+                            <input type="text" name="title1" id="title1" required
+                                   value="<?php echo htmlspecialchars($heroData['title1']); ?>"
+                                   class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition"
+                                   oninput="updatePreview()">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-semibold mb-2">Judul 2</label>
+                            <input type="text" name="title2" id="title2" required
+                                   value="<?php echo htmlspecialchars($heroData['title2']); ?>"
+                                   class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition"
+                                   oninput="updatePreview()">
+                        </div>
+                    </div>
+                    
+                    <div class="md:col-span-2">
+                        <label class="block text-gray-700 font-semibold mb-2">Subjudul</label>
+                        <textarea name="subtitle" id="subtitle" rows="3" required
+                                  class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition"
+                                  oninput="updatePreview()"><?php echo htmlspecialchars($heroData['subtitle']); ?></textarea>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-gray-700 font-semibold mb-2">Jam Buka</label>
+                        <input type="text" name="open_time" id="open_time" required
+                               value="<?php echo htmlspecialchars($heroData['open_time']); ?>"
+                               class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition"
+                               oninput="updatePreview()">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-gray-700 font-semibold mb-2">Jam Tutup</label>
+                        <input type="text" name="close_time" id="close_time" required
+                               value="<?php echo htmlspecialchars($heroData['close_time']); ?>"
+                               class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition"
+                               oninput="updatePreview()">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-gray-700 font-semibold mb-2">Background Image</label>
+                        <input type="text" name="background_image" required
+                               value="<?php echo htmlspecialchars($heroData['background_image']); ?>"
+                               class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition">
+                        <p class="text-xs text-gray-500 mt-1">
+                            <i class="fas fa-info-circle text-blue-500 mr-1"></i>
+                            Nama file gambar di folder src/assets/images/
+                        </p>
+                    </div>
+                    
+                    <div class="md:col-span-2">
+                        <h3 class="font-bold text-lg mb-4">Tombol</h3>
+                        <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-gray-700 font-semibold mb-2">Badge Text</label>
-                                <input type="text" name="badge" required
-                                       value="<?php echo htmlspecialchars($heroData['badge']); ?>"
+                                <label class="block text-gray-700 font-semibold mb-2">Tombol 1 Teks</label>
+                                <input type="text" name="button1_text" required
+                                       value="<?php echo htmlspecialchars($heroData['button1_text']); ?>"
                                        class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition">
                             </div>
-                            
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-gray-700 font-semibold mb-2">Judul 1</label>
-                                    <input type="text" name="title1" required
-                                           value="<?php echo htmlspecialchars($heroData['title1']); ?>"
-                                           class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition">
-                                </div>
-                                <div>
-                                    <label class="block text-gray-700 font-semibold mb-2">Judul 2</label>
-                                    <input type="text" name="title2" required
-                                           value="<?php echo htmlspecialchars($heroData['title2']); ?>"
-                                           class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition">
-                                </div>
-                            </div>
-                            
-                            <div class="md:col-span-2">
-                                <label class="block text-gray-700 font-semibold mb-2">Subjudul</label>
-                                <textarea name="subtitle" rows="3" required
-                                          class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition"><?php echo htmlspecialchars($heroData['subtitle']); ?></textarea>
-                            </div>
-                            
                             <div>
-                                <label class="block text-gray-700 font-semibold mb-2">Jam Buka</label>
-                                <input type="text" name="open_time" required
-                                       value="<?php echo htmlspecialchars($heroData['open_time']); ?>"
+                                <label class="block text-gray-700 font-semibold mb-2">Tombol 1 Link</label>
+                                <input type="text" name="button1_link" required
+                                       value="<?php echo htmlspecialchars($heroData['button1_link']); ?>"
                                        class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition">
                             </div>
-                            
                             <div>
-                                <label class="block text-gray-700 font-semibold mb-2">Jam Tutup</label>
-                                <input type="text" name="close_time" required
-                                       value="<?php echo htmlspecialchars($heroData['close_time']); ?>"
+                                <label class="block text-gray-700 font-semibold mb-2">Tombol 2 Teks</label>
+                                <input type="text" name="button2_text" required
+                                       value="<?php echo htmlspecialchars($heroData['button2_text']); ?>"
                                        class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition">
                             </div>
-                            
                             <div>
-                                <label class="block text-gray-700 font-semibold mb-2">Background Image</label>
-                                <input type="text" name="background_image" required
-                                       value="<?php echo htmlspecialchars($heroData['background_image']); ?>"
+                                <label class="block text-gray-700 font-semibold mb-2">Tombol 2 Link</label>
+                                <input type="text" name="button2_link" required
+                                       value="<?php echo htmlspecialchars($heroData['button2_link']); ?>"
                                        class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition">
-                            </div>
-                            
-                            <div class="md:col-span-2">
-                                <h3 class="font-bold text-lg mb-4">Tombol</h3>
-                                <div class="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="block text-gray-700 font-semibold mb-2">Tombol 1 Teks</label>
-                                        <input type="text" name="button1_text" required
-                                               value="<?php echo htmlspecialchars($heroData['button1_text']); ?>"
-                                               class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition">
-                                    </div>
-                                    <div>
-                                        <label class="block text-gray-700 font-semibold mb-2">Tombol 1 Link</label>
-                                        <input type="text" name="button1_link" required
-                                               value="<?php echo htmlspecialchars($heroData['button1_link']); ?>"
-                                               class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition">
-                                    </div>
-                                    <div>
-                                        <label class="block text-gray-700 font-semibold mb-2">Tombol 2 Teks</label>
-                                        <input type="text" name="button2_text" required
-                                               value="<?php echo htmlspecialchars($heroData['button2_text']); ?>"
-                                               class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition">
-                                    </div>
-                                    <div>
-                                        <label class="block text-gray-700 font-semibold mb-2">Tombol 2 Link</label>
-                                        <input type="text" name="button2_link" required
-                                               value="<?php echo htmlspecialchars($heroData['button2_link']); ?>"
-                                               class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none transition">
-                                    </div>
-                                </div>
                             </div>
                         </div>
-                        
-                        <div class="mt-6 pt-6 border-t">
-                            <button type="submit"
-                                    class="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-xl font-semibold transition shadow-md flex items-center gap-2">
-                                <i class="fas fa-save"></i>
-                                <span>Simpan Perubahan</span>
-                            </button>
-                        </div>
-                    </form>
+                    </div>
                 </div>
-            </div>
+                
+                <div class="mt-6 pt-6 border-t">
+                    <button type="submit"
+                            class="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-xl font-semibold transition shadow-md flex items-center gap-2">
+                        <i class="fas fa-save"></i>
+                        <span>Simpan Perubahan</span>
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
-</body>
-</html>
+</div>
+
+<script>
+// Live preview update
+function updatePreview() {
+    const badge = document.getElementById('badge').value;
+    const title1 = document.getElementById('title1').value;
+    const title2 = document.getElementById('title2').value;
+    const subtitle = document.getElementById('subtitle').value;
+    const openTime = document.getElementById('open_time').value;
+    const closeTime = document.getElementById('close_time').value;
+    
+    document.getElementById('previewBadge').textContent = badge || 'Badge';
+    document.getElementById('previewTitle1').textContent = title1 || 'Toko';
+    document.getElementById('previewTitle2').textContent = title2 || 'Daffa';
+    document.getElementById('previewSubtitle').textContent = subtitle || 'Subtitle';
+    document.getElementById('previewTime').textContent = (openTime || '07:00') + ' - ' + (closeTime || '21:30') + ' WIB';
+}
+
+// Auto-resize textarea
+const textarea = document.querySelector('textarea');
+if (textarea) {
+    textarea.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = (this.scrollHeight) + 'px';
+    });
+}
+</script>
+
+<style>
+input, textarea, button {
+    transition: all 0.2s ease;
+}
+input:focus, textarea:focus {
+    border-color: #16a34a;
+    box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
+}
+</style>
+
 <?php include 'partials/footer.php'; ?>

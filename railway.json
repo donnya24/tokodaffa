@@ -2,5 +2,14 @@
   "build": {
     "builder": "NIXPACKS",
     "nixPkgs": ["php80Extensions.pdo_pgsql", "php80Extensions.pgsql"]
+  },
+  "deploy": {
+    "include": [
+      "src/assets/**/*",
+      "singnduetoko/**/*",
+      "api/**/*",
+      "*.php",
+      "composer.json"
+    ]
   }
 }

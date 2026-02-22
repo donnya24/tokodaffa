@@ -9,46 +9,80 @@ class Database {
 
     private function __construct() {
         try {
-
-            // Ambil dari .env (bukan SUPABASE_SERVICE_KEY)
             $host = $_ENV['DB_HOST'];
             $port = $_ENV['DB_PORT'];
             $db   = $_ENV['DB_NAME'];
             $user = $_ENV['DB_USER'];
             $pass = $_ENV['DB_PASS'];
 
-            // DSN untuk Supabase Pooler
             $dsn = "pgsql:host={$host};port={$port};dbname={$db};sslmode=require";
 
-            if (APP_ENV === 'development') {
-                error_log("Connecting to Supabase Pooler...");
-                error_log("DSN: " . $dsn);
-                error_log("User: " . $user);
-            }
-
             $this->pdo = new PDO($dsn, $user, $pass);
-
             $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $this->pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
             $this->pdo->setAttribute(PDO::ATTR_TIMEOUT, 30);
 
-            if (APP_ENV === 'development') {
-                error_log("Supabase connection SUCCESS");
-            }
-
         } catch (PDOException $e) {
-
-            error_log("Database connection error: " . $e->getMessage());
-
-            if (APP_ENV === 'development') {
-                die("
-                    <h3>Database Connection Failed</h3>
-                    Error: {$e->getMessage()} <br>
-                    Code: {$e->getCode()}
-                ");
-            } else {
-                die("Database connection failed.");
-            }
+            // Tampilkan pesan sederhana untuk semua environment
+            die("
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Koneksi Database Gagal</title>
+                    <style>
+                        body { 
+                            font-family: 'Arial', sans-serif; 
+                            background: #f3f4f6; 
+                            display: flex; 
+                            justify-content: center; 
+                            align-items: center; 
+                            height: 100vh; 
+                            margin: 0; 
+                        }
+                        .error-box { 
+                            background: white; 
+                            padding: 40px; 
+                            border-radius: 16px; 
+                            box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+                            text-align: center; 
+                            max-width: 400px; 
+                        }
+                        .icon { 
+                            font-size: 64px; 
+                            margin-bottom: 20px; 
+                        }
+                        h1 { 
+                            color: #1f2937; 
+                            font-size: 24px; 
+                            margin-bottom: 10px; 
+                        }
+                        p { 
+                            color: #6b7280; 
+                            margin-bottom: 20px; 
+                        }
+                        .btn { 
+                            background: #059669; 
+                            color: white; 
+                            padding: 12px 24px; 
+                            border-radius: 8px; 
+                            text-decoration: none; 
+                            display: inline-block; 
+                        }
+                        .btn:hover { 
+                            background: #047857; 
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class='error-box'>
+                        <div class='icon'>⚠️</div>
+                        <h1>Koneksi Database Gagal</h1>
+                        <p>Maaf, saat ini terjadi gangguan pada koneksi database. Silakan coba beberapa saat lagi.</p>
+                        <a href='javascript:location.reload()' class='btn'>Coba Lagi</a>
+                    </div>
+                </body>
+                </html>
+            ");
         }
     }
 
@@ -68,7 +102,6 @@ class Database {
             $stmt = $this->pdo->query("SELECT 1");
             return $stmt->fetchColumn() == 1;
         } catch (PDOException $e) {
-            error_log("Test connection failed: " . $e->getMessage());
             return false;
         }
     }
@@ -81,7 +114,6 @@ class Database {
                 ->query("SELECT * FROM products ORDER BY id DESC")
                 ->fetchAll();
         } catch (PDOException $e) {
-            error_log("getProducts error: " . $e->getMessage());
             return [];
         }
     }
@@ -92,32 +124,57 @@ class Database {
             $stmt->execute([$id]);
             return $stmt->fetch();
         } catch (PDOException $e) {
-            error_log("getProduct error: " . $e->getMessage());
             return null;
         }
     }
 
     public function createProduct($data) {
         try {
+            $is_highlight = 'reguler';
+            if (isset($data['is_highlight'])) {
+                if ($data['is_highlight'] === 'unggulan' || $data['is_highlight'] === '1' || $data['is_highlight'] === 1) {
+                    $is_highlight = 'unggulan';
+                } else {
+                    $is_highlight = 'reguler';
+                }
+            }
+            
             $sql = "INSERT INTO products 
-                    (name, price, unit, description, image, is_highlight)
-                    VALUES (:name, :price, :unit, :description, :image, :is_highlight)
+                    (name, price, unit, description, image, is_highlight, created_at, updated_at)
+                    VALUES 
+                    (:name, :price, :unit, :description, :image, :is_highlight, NOW(), NOW())
                     RETURNING id";
 
             $stmt = $this->pdo->prepare($sql);
-            $stmt->execute($data);
-
+            
+            $params = [
+                ':name' => $data['name'],
+                ':price' => $data['price'],
+                ':unit' => $data['unit'],
+                ':description' => $data['description'] ?? '',
+                ':image' => $data['image'],
+                ':is_highlight' => $is_highlight
+            ];
+            
+            $stmt->execute($params);
             return $stmt->fetchColumn();
+            
         } catch (PDOException $e) {
-            error_log("createProduct error: " . $e->getMessage());
             return false;
         }
     }
 
     public function updateProduct($id, $data) {
         try {
-            $data['id'] = $id;
-
+            $is_highlight = 'reguler';
+            if (isset($data['is_highlight'])) {
+                if ($data['is_highlight'] === 'unggulan' || $data['is_highlight'] === '1' || $data['is_highlight'] === 1) {
+                    $is_highlight = 'unggulan';
+                } else {
+                    $is_highlight = 'reguler';
+                }
+            }
+            
             $sql = "UPDATE products SET
                     name = :name,
                     price = :price,
@@ -125,25 +182,124 @@ class Database {
                     description = :description,
                     image = :image,
                     is_highlight = :is_highlight,
-                    updated_at = CURRENT_TIMESTAMP
+                    updated_at = NOW()
                     WHERE id = :id";
 
             $stmt = $this->pdo->prepare($sql);
-            return $stmt->execute($data);
-
+            
+            $params = [
+                ':id' => $id,
+                ':name' => $data['name'],
+                ':price' => $data['price'],
+                ':unit' => $data['unit'],
+                ':description' => $data['description'] ?? '',
+                ':image' => $data['image'],
+                ':is_highlight' => $is_highlight
+            ];
+            
+            return $stmt->execute($params);
+            
         } catch (PDOException $e) {
-            error_log("updateProduct error: " . $e->getMessage());
             return false;
         }
     }
 
     public function deleteProduct($id) {
         try {
+            $check = $this->pdo->prepare("SELECT id FROM products WHERE id = ?");
+            $check->execute([$id]);
+            $product = $check->fetch();
+            
+            if (!$product) {
+                return false;
+            }
+            
             $stmt = $this->pdo->prepare("DELETE FROM products WHERE id = ?");
             return $stmt->execute([$id]);
+            
         } catch (PDOException $e) {
-            error_log("deleteProduct error: " . $e->getMessage());
             return false;
+        }
+    }
+
+    // ================= VISITOR STATISTICS =================
+
+    public function recordVisitor() {
+        try {
+            $today = date('Y-m-d');
+            
+            $check = $this->pdo->prepare("SELECT id FROM visitors WHERE visit_date = ?");
+            $check->execute([$today]);
+            $exists = $check->fetch();
+            
+            if ($exists) {
+                $stmt = $this->pdo->prepare("UPDATE visitors SET visit_count = visit_count + 1, updated_at = NOW() WHERE visit_date = ?");
+                $stmt->execute([$today]);
+            } else {
+                $stmt = $this->pdo->prepare("INSERT INTO visitors (visit_date, visit_count) VALUES (?, 1)");
+                $stmt->execute([$today]);
+            }
+            
+            return true;
+        } catch (PDOException $e) {
+            return false;
+        }
+    }
+
+    public function getWeeklyVisitors() {
+        try {
+            $sql = "SELECT 
+                        TO_CHAR(visit_date, 'Day') as day_name,
+                        EXTRACT(DOW FROM visit_date) as day_num,
+                        visit_count
+                    FROM visitors 
+                    WHERE visit_date >= CURRENT_DATE - INTERVAL '6 days'
+                    ORDER BY visit_date ASC";
+            
+            $stmt = $this->pdo->query($sql);
+            $results = $stmt->fetchAll();
+            
+            $days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+            $visitor_data = array_fill(0, 7, 0);
+            
+            foreach ($results as $row) {
+                $day_index = intval($row['day_num']);
+                $adjusted_index = ($day_index == 0) ? 6 : $day_index - 1;
+                $visitor_data[$adjusted_index] = intval($row['visit_count']);
+            }
+            
+            return [
+                'labels' => $days,
+                'data' => $visitor_data
+            ];
+            
+        } catch (PDOException $e) {
+            return [
+                'labels' => ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'],
+                'data' => [0, 0, 0, 0, 0, 0, 0]
+            ];
+        }
+    }
+
+    public function getTotalVisitors() {
+        try {
+            $stmt = $this->pdo->query("SELECT SUM(visit_count) as total FROM visitors");
+            $result = $stmt->fetch();
+            return $result ? intval($result['total']) : 0;
+        } catch (PDOException $e) {
+            return 0;
+        }
+    }
+
+    public function getTodayVisitors() {
+        try {
+            $today = date('Y-m-d');
+            $stmt = $this->pdo->prepare("SELECT visit_count FROM visitors WHERE visit_date = ?");
+            $stmt->execute([$today]);
+            $result = $stmt->fetch();
+            return $result ? intval($result['visit_count']) : 0;
+        } catch (PDOException $e) {
+            return 0;
         }
     }
 
@@ -156,9 +312,7 @@ class Database {
             $user = $stmt->fetch();
 
             return $user && password_verify($password, $user['password_hash']);
-
         } catch (PDOException $e) {
-            error_log("verifyAdmin error: " . $e->getMessage());
             return false;
         }
     }
@@ -187,9 +341,7 @@ class Database {
             }
 
             return $result;
-
         } catch (PDOException $e) {
-            error_log("getHeroSection error: " . $e->getMessage());
             return [];
         }
     }
@@ -213,9 +365,7 @@ class Database {
 
             $stmt = $this->pdo->prepare($sql);
             return $stmt->execute($data);
-
         } catch (PDOException $e) {
-            error_log("updateHeroSection error: " . $e->getMessage());
             return false;
         }
     }
@@ -227,7 +377,6 @@ class Database {
             $stmt = $this->pdo->query("SELECT * FROM about_section WHERE id = 1");
             $result = $stmt->fetch();
 
-            // Jika belum ada data di database
             if (!$result) {
                 return [
                     'title' => 'Tentang Toko Daffa',
@@ -242,9 +391,7 @@ class Database {
             }
 
             return $result;
-
         } catch (PDOException $e) {
-            error_log("getAboutSection error: " . $e->getMessage());
             return [];
         }
     }
@@ -265,9 +412,7 @@ class Database {
 
             $stmt = $this->pdo->prepare($sql);
             return $stmt->execute($data);
-
         } catch (PDOException $e) {
-            error_log("updateAboutSection error: " . $e->getMessage());
             return false;
         }
     }
@@ -279,7 +424,6 @@ class Database {
             $stmt = $this->pdo->query("SELECT * FROM contact_section WHERE id = 1");
             $result = $stmt->fetch();
 
-            // Jika belum ada data di database
             if (!$result) {
                 return [
                     'address' => 'Jl. Contoh No. 123, Kota, Provinsi 12345',
@@ -291,32 +435,16 @@ class Database {
             }
 
             return $result;
-
         } catch (PDOException $e) {
-            error_log("getContactSection error: " . $e->getMessage());
-            
-            // Return default values if table doesn't exist
-            if (APP_ENV === 'development') {
-                error_log("Contact section table might not exist. Returning default values.");
-            }
-            
-            return [
-                'address' => 'Jl. Contoh No. 123, Kota, Provinsi 12345',
-                'whatsapp_number' => '6281234567890',
-                'whatsapp_display' => '+62 812-3456-7890',
-                'maps_embed_url' => 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d126914.16259714688!2d106.77397639999999!3d-6.2293866!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e69f3e945f34dbf%3A0x5378bf6a9f1b3e6d!2sJakarta!5e0!3m2!1sen!2sid!4v1234567890',
-                'maps_link' => 'https://goo.gl/maps/example'
-            ];
+            return [];
         }
     }
 
     public function updateContactSection($data) {
         try {
-            // Cek apakah data sudah ada
             $check = $this->pdo->query("SELECT id FROM contact_section WHERE id = 1")->fetch();
             
             if ($check) {
-                // Update data yang sudah ada
                 $sql = "UPDATE contact_section SET
                         address = :address,
                         whatsapp_number = :whatsapp_number,
@@ -326,7 +454,6 @@ class Database {
                         updated_at = CURRENT_TIMESTAMP
                         WHERE id = 1";
             } else {
-                // Insert data baru jika belum ada
                 $sql = "INSERT INTO contact_section 
                         (id, address, whatsapp_number, whatsapp_display, maps_embed_url, maps_link)
                         VALUES (1, :address, :whatsapp_number, :whatsapp_display, :maps_embed_url, :maps_link)";
@@ -334,9 +461,7 @@ class Database {
 
             $stmt = $this->pdo->prepare($sql);
             return $stmt->execute($data);
-
         } catch (PDOException $e) {
-            error_log("updateContactSection error: " . $e->getMessage());
             return false;
         }
     }

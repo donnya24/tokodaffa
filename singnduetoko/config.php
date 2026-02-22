@@ -111,14 +111,12 @@ function uploadProductImage($file, $old_image = null) {
             // Hanya hapus jika file benar-benar ada dan bukan default/placeholder
             if (strpos($old_image, 'product_') === 0 || strpos($old_image, 'produk-') === 0) {
                 unlink($old_file_path);
-                error_log("Gambar lama dihapus: " . $old_image);
             }
         }
     }
 
     // Upload file baru
     if (move_uploaded_file($file['tmp_name'], $upload_path)) {
-        error_log("Gambar baru diupload: " . $new_filename);
         return [
             'success' => true,
             'filename' => $new_filename
@@ -129,14 +127,21 @@ function uploadProductImage($file, $old_image = null) {
 }
 
 function deleteProductImage($filename) {
-    if (!$filename) return false;
-
+    if (!$filename) {
+        return false;
+    }
+    
+    // Jangan hapus placeholder
+    if ($filename === 'placeholder.png') {
+        return false;
+    }
+    
     $filepath = PRODUCTS_IMAGE_PATH . $filename;
-
-    if (file_exists($filepath) && strpos($filename, 'product_') === 0) {
+    
+    if (file_exists($filepath)) {
         return unlink($filepath);
     }
-
+    
     return false;
 }
 
@@ -171,7 +176,6 @@ function getProductImageUrl($filename) {
     if (file_exists($file_path)) {
         return $base_url . $image_path . $filename;
     } else {
-        error_log("Gambar tidak ditemukan: " . $file_path);
         return $base_url . $image_path . 'placeholder.png';
     }
 }

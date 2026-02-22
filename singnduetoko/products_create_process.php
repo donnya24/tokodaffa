@@ -3,41 +3,51 @@ require_once 'config.php';
 require_once 'database.php';
 requireLogin();
 
-header('Content-Type: application/json');
-
 $db = Database::getInstance();
-$response = ['success' => false, 'message' => ''];
-
-// Debug mode
-$debug = [];
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    $response['message'] = 'Method not allowed';
-    echo json_encode($response);
+    $_SESSION['error_message'] = 'Method not allowed';
+    header('Location: products.php');
     exit();
 }
 
 // CSRF Protection
 if (!isset($_POST['csrf_token']) || !verifyCSRFToken($_POST['csrf_token'])) {
-    $response['message'] = "Invalid CSRF token";
-    echo json_encode($response);
+    $_SESSION['error_message'] = "Invalid CSRF token";
+    header('Location: products.php');
     exit();
 }
 
 // Ambil data form
-$name = $_POST['name'] ?? '';
-$price = $_POST['price'] ?? '';
-$unit = $_POST['unit'] ?? '';
-$description = $_POST['description'] ?? '';
-$is_highlight = isset($_POST['is_highlight']) ? true : false;
+$name = trim($_POST['name'] ?? '');
+$price = trim($_POST['price'] ?? '');
+$unit = trim($_POST['unit'] ?? '');
+$description = trim($_POST['description'] ?? '');
 
-$debug['form_data'] = [
-    'name' => $name,
-    'price' => $price,
-    'unit' => $unit,
-    'description' => $description,
-    'is_highlight' => $is_highlight
-];
+// Handle is_highlight dengan ENUM (reguler/unggulan)
+$is_highlight = 'reguler'; // Default
+
+if (isset($_POST['is_highlight'])) {
+    $highlight_value = $_POST['is_highlight'];
+    
+    // Log untuk debugging
+    error_log("=== DEBUG IS_HIGHLIGHT CREATE ===");
+    error_log("Raw value: " . $highlight_value);
+    
+    // Konversi ke string 'reguler' atau 'unggulan'
+    if ($highlight_value === '1' || $highlight_value === 1 || $highlight_value === 'unggulan') {
+        $is_highlight = 'unggulan';
+        error_log("Result: UNGGULAN");
+    } else {
+        $is_highlight = 'reguler';
+        error_log("Result: REGULER");
+    }
+} else {
+    $is_highlight = 'reguler';
+    error_log("No is_highlight in POST, default REGULER");
+}
+
+error_log("Final is_highlight: " . $is_highlight);
 
 // Validasi
 $errors = [];
@@ -48,29 +58,26 @@ if (empty($unit)) $errors[] = 'Satuan harus diisi';
 // Upload gambar
 $image_filename = '';
 if (isset($_FILES['image']) && $_FILES['image']['error'] !== UPLOAD_ERR_NO_FILE) {
-    $debug['file_info'] = $_FILES['image'];
-    
     $upload_result = uploadProductImage($_FILES['image']);
     if ($upload_result['success']) {
         $image_filename = $upload_result['filename'];
-        $debug['upload_success'] = $image_filename;
+        error_log("Gambar berhasil diupload: " . $image_filename);
     } else {
         $errors[] = $upload_result['message'];
-        $debug['upload_error'] = $upload_result['message'];
+        error_log("Gagal upload gambar: " . $upload_result['message']);
     }
 } else {
     $errors[] = 'Gambar produk harus diupload';
-    $debug['file_error'] = $_FILES['image']['error'] ?? 'No file';
+    error_log("Tidak ada file gambar diupload");
 }
 
 if (!empty($errors)) {
-    $response['message'] = implode("\n", $errors);
-    $response['debug'] = $debug;
-    echo json_encode($response);
+    $_SESSION['error_message'] = implode("<br>", $errors);
+    header('Location: products_create.php');
     exit();
 }
 
-// Simpan ke database
+// Siapkan data untuk database
 $data = [
     'name' => $name,
     'price' => $price,
@@ -80,20 +87,26 @@ $data = [
     'is_highlight' => $is_highlight
 ];
 
+error_log("Data yang akan disimpan: " . json_encode($data));
+
+// Simpan ke database
 try {
     $new_id = $db->createProduct($data);
     
     if ($new_id) {
-        $response['success'] = true;
-        $response['message'] = 'Produk berhasil ditambahkan!';
-        $response['id'] = $new_id;
+        error_log("Produk berhasil disimpan dengan ID: " . $new_id);
+        $_SESSION['success_message'] = 'Produk berhasil ditambahkan!';
+        header('Location: products.php');
+        exit();
     } else {
-        $response['message'] = 'Gagal menyimpan ke database';
+        error_log("Gagal menyimpan produk - createProduct mengembalikan false");
+        $_SESSION['error_message'] = 'Gagal menyimpan ke database';
+        header('Location: products_create.php');
+        exit();
     }
 } catch (Exception $e) {
-    $response['message'] = 'Database error: ' . $e->getMessage();
-    $response['debug'] = $debug;
+    error_log("Exception: " . $e->getMessage());
+    $_SESSION['error_message'] = 'Database error: ' . $e->getMessage();
+    header('Location: products_create.php');
+    exit();
 }
-
-echo json_encode($response);
-exit();

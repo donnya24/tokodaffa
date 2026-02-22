@@ -5,6 +5,12 @@ require_once 'database.php';
 $db = Database::getInstance();
 $errors = [];
 
+// Deteksi base path untuk redirect
+$base_path = '';
+if (strpos($_SERVER['SCRIPT_NAME'], '/tokodaffa/') !== false) {
+    $base_path = '/tokodaffa';
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // CSRF Protection
     if (!isset($_POST['csrf_token']) || !verifyCSRFToken($_POST['csrf_token'])) {
@@ -22,13 +28,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors[] = "Password harus diisi";
         }
         
-        // Verifikasi dari database (tanpa batasan percobaan)
+        // Verifikasi dari database
         if (empty($errors)) {
             if ($db->verifyAdmin($username, $password)) {
-                // Regenerate session ID untuk mencegah session fixation
+                // Regenerate session ID
                 session_regenerate_id(true);
                 
-                // Set session dengan informasi tambahan
+                // Set session
                 $_SESSION['admin_logged_in'] = true;
                 $_SESSION['login_time'] = time();
                 $_SESSION['login_ip'] = $_SERVER['REMOTE_ADDR'];
@@ -37,7 +43,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Log successful login
                 error_log("Successful login for user: $username from IP: " . $_SERVER['REMOTE_ADDR']);
                 
-                header('Location: /singnduetoko/dashboard.php');
+                // Redirect ke dashboard dengan path yang benar
+                header('Location: ' . $base_path . '/singnduetoko/dashboard.php');
                 exit();
             } else {
                 $errors[] = "Username atau password salah!";
@@ -158,7 +165,7 @@ $csrf_token = generateCSRFToken();
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.6); /* Overlay gelap 60% */
+            background: rgba(0, 0, 0, 0.6);
             z-index: 1;
         }
         
@@ -175,7 +182,7 @@ $csrf_token = generateCSRFToken();
     </style>
 </head>
 <body class="bg-store min-h-screen flex items-center justify-center p-4">
-    <!-- Overlay tambahan untuk memastikan kegelapan -->
+    <!-- Overlay tambahan -->
     <div class="absolute inset-0 bg-black bg-opacity-40 z-0"></div>
     
     <div class="w-full login-card relative z-10" x-data="{ 
@@ -185,9 +192,9 @@ $csrf_token = generateCSRFToken();
         password: '',
         errors: []
     }">
-        <!-- Card Login dengan background semi transparan -->
+        <!-- Card Login -->
         <div class="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl overflow-hidden border border-white/20">
-            <!-- Header dengan efek glassmorphism -->
+            <!-- Header -->
             <div class="bg-gradient-to-r from-green-900/90 to-green-800/90 backdrop-blur-sm p-4 text-center border-b border-white/10">
                 <div class="bg-white/20 w-16 h-16 mx-auto rounded-xl flex items-center justify-center backdrop-blur-sm mb-2 shadow-lg">
                     <i class="fas fa-store text-white text-3xl"></i>
@@ -301,23 +308,22 @@ $csrf_token = generateCSRFToken();
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     
     <script>
-        // Prevent form resubmission on page refresh
+        // Prevent form resubmission
         if (window.history.replaceState) {
             window.history.replaceState(null, null, window.location.href);
         }
         
-        // Auto-focus username field
+        // Auto-focus
         document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('username').focus();
         });
         
-        // Fallback jika gambar tidak ditemukan
+        // Fallback gambar
         window.addEventListener('load', function() {
             const bgElement = document.querySelector('.bg-store');
             const testImg = new Image();
             testImg.src = '../src/assets/images/toko-daffa.png';
             testImg.onerror = function() {
-                // Jika gambar gagal dimuat, beri background color fallback
                 bgElement.style.backgroundImage = 'linear-gradient(-45deg, #052e16, #0f3b1a, #166534, #15803d)';
                 bgElement.style.backgroundSize = '400% 400%';
                 bgElement.style.animation = 'gradient 15s ease infinite';

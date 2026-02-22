@@ -32,23 +32,27 @@ $products = $db->getProducts();
         <?php else: ?>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 <?php foreach ($products as $product): ?>
-                    <div class="product-card rounded-2xl shadow-md hover:shadow-xl p-5 <?php echo ($product['is_highlight'] ?? false) ? 'border-2 border-green-700 ring-2 ring-green-400' : ''; ?>">
+                    <?php 
+                    // Cek apakah produk unggulan (nilai 'unggulan')
+                    $is_highlight = ($product['is_highlight'] == 'unggulan'); 
+                    ?>
+                    <div class="product-card rounded-2xl shadow-md hover:shadow-xl p-5 <?php echo $is_highlight ? 'border-2 border-green-700 ring-2 ring-green-400' : ''; ?>">
                         
                         <!-- Image Container -->
                         <div class="h-44 w-full rounded-xl overflow-hidden bg-gray-200 relative">
                             <?php if (!empty($product['image'])): ?>
-                                <img src="src/assets/images/products/<?php echo htmlspecialchars($product['image']); ?>" 
+                                <img src="<?php echo getProductImageUrl($product['image']); ?>" 
                                      alt="<?php echo htmlspecialchars($product['name']); ?>"
                                      class="product-image w-full h-full object-cover"
-                                     onerror="this.src='src/assets/images/placeholder.png'">
+                                     onerror="this.src='<?php echo getProductImageUrl('placeholder.png'); ?>'">
                             <?php else: ?>
                                 <div class="w-full h-full flex items-center justify-center">
                                     <i class="fas fa-image text-gray-400 text-3xl"></i>
                                 </div>
                             <?php endif; ?>
                             
-                            <!-- Highlight Badge -->
-                            <?php if ($product['is_highlight'] ?? false): ?>
+                            <!-- Highlight Badge - hanya tampil jika unggulan -->
+                            <?php if ($is_highlight): ?>
                                 <div class="absolute top-2 right-2 bg-green-600 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
                                     <i class="fas fa-star text-xs"></i>
                                     <span>Unggulan</span>
@@ -57,14 +61,14 @@ $products = $db->getProducts();
                         </div>
 
                         <!-- Product Info -->
-                        <h3 class="font-bold text-lg mt-4 line-clamp-2 <?php echo ($product['is_highlight'] ?? false) ? 'text-green-800' : 'text-gray-800'; ?>">
+                        <h3 class="font-bold text-lg mt-4 line-clamp-2 <?php echo $is_highlight ? 'text-green-800' : 'text-gray-800'; ?>">
                             <?php echo htmlspecialchars($product['name']); ?>
                         </h3>
                         
                         <p class="text-green-700 text-sm"><?php echo htmlspecialchars($product['unit']); ?></p>
                         
                         <div class="flex justify-between items-center mt-4">
-                            <span class="text-xl font-semibold <?php echo ($product['is_highlight'] ?? false) ? 'text-green-800' : 'text-gray-900'; ?>">
+                            <span class="text-xl font-semibold <?php echo $is_highlight ? 'text-green-800' : 'text-gray-900'; ?>">
                                 <?php echo htmlspecialchars($product['price']); ?>
                             </span>
                         </div>

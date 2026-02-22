@@ -3,53 +3,60 @@ require_once 'config.php';
 require_once 'database.php';
 requireLogin();
 
-header('Content-Type: application/json');
-
 $db = Database::getInstance();
-$response = ['success' => false, 'message' => ''];
-
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    $response['message'] = 'Method not allowed';
-    echo json_encode($response);
-    exit();
-}
 
 // CSRF Protection
-if (!isset($_POST['csrf_token']) || !verifyCSRFToken($_POST['csrf_token'])) {
-    $response['message'] = "Invalid CSRF token";
-    echo json_encode($response);
+if (!isset($_GET['csrf_token']) || !verifyCSRFToken($_GET['csrf_token'])) {
+    $_SESSION['error_message'] = "Invalid CSRF token";
+    header('Location: products.php');
     exit();
 }
 
-$id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
+$id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
 if (!$id) {
-    $response['message'] = 'ID produk tidak valid';
-    echo json_encode($response);
+    $_SESSION['error_message'] = 'ID produk tidak valid';
+    header('Location: products.php');
     exit();
 }
 
-// Ambil data produk untuk mendapatkan nama file gambar
+// Ambil data produk untuk mendapatkan nama gambar
 $product = $db->getProduct($id);
 
 if (!$product) {
-    $response['message'] = 'Produk tidak ditemukan';
-    echo json_encode($response);
+    $_SESSION['error_message'] = 'Produk tidak ditemukan';
+    header('Location: products.php');
     exit();
 }
 
-// Hapus gambar
-if (!empty($product['image'])) {
-    deleteProductImage($product['image']);
+// Hapus file gambar jika ada (dan bukan placeholder)
+if (!empty($product['image']) && $product['image'] !== 'placeholder.png') {
+    $deleted = deleteProductImage($product['image']);
+    if ($deleted) {
+        error_log("Gambar berhasil dihapus: " . $product['image']);
+    } else {
+        error_log("Gagal menghapus gambar: " . $product['image'] . " - file mungkin tidak ada");
+        // Tetap lanjutkan proses hapus dari database meskipun gambar gagal dihapus
+    }
 }
 
 // Hapus dari database
-if ($db->deleteProduct($id)) {
-    $response['success'] = true;
-    $response['message'] = 'Produk "' . htmlspecialchars($product['name']) . '" berhasil dihapus!';
-} else {
-    $response['message'] = 'Gagal menghapus produk';
+try {
+    $result = $db->deleteProduct($id);
+    
+    if ($result) {
+        $_SESSION['success_message'] = 'Produk berhasil dihapus!';
+        error_log("Produk ID $id berhasil dihapus dari database");
+    } else {
+        $_SESSION['error_message'] = 'Gagal menghapus produk dari database';
+        error_log("Gagal menghapus produk ID $id dari database");
+    }
+} catch (Exception $e) {
+    $_SESSION['error_message'] = 'Database error: ' . $e->getMessage();
+    error_log("Error hapus produk: " . $e->getMessage());
 }
 
-echo json_encode($response);
+// Redirect kembali ke halaman products
+header('Location: products.php');
 exit();
+?>
